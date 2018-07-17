@@ -35,6 +35,7 @@
            
     
   **slide**:          duration,
+  
   **scroll**:         duration,
   
     --- slide:  Popover will slide to new position
@@ -42,6 +43,7 @@
     --- duration: Time in milliseconds
   
   **title**:          "String",
+  
   **text**:           "String",
   
   **arrows**:         "hidden"
