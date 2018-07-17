@@ -1,4 +1,4 @@
-.highlight {
+  .highlight {
     position: fixed;
     z-index: 1;
     left: 0;
@@ -7,6 +7,16 @@
     height: 100vh;
     background-color: rgb(0,0,0);
     background-color: rgba(0,0,0,0.4);
+  }
+
+  .block-focused-click{
+    position: fixed;
+    z-index: 1;
+    width: 100vw;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    background-color: rgba(0,0,0);
   }
   
   .selected-tour{

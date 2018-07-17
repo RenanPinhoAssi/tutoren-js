@@ -61,6 +61,29 @@
 
         var alternative_flow;
 
+
+        var mouse_up_handler = function(e) { 
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        var click_handler = function(e) { 
+            let Xm = e.pageX;
+            let Ym = e.pageY;
+            let Allowed_Buttons;
+            try{
+                Allowed_Buttons = Actual_Step.button.split(" ");
+            }catch(e){
+                Allowed_Buttons = [];
+            }
+            if(!Check_Valid_Click(Xm,Ym,Allowed_Buttons)){
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }
+
+        
         /////////////////////////////////////////////////////////////////////////////
 
         // Destruction Method
@@ -74,6 +97,9 @@
                 $(Actual_Step.button).removeClass(Actual_Step.button_effects);
                 $(Actual_Step.button).unbind('mouseup');
             }
+            document.removeEventListener('mouseup', mouse_up_handler, true);
+            document.removeEventListener('click', click_handler, true);
+            _tr.running = false;
         }
 
         // Constructor Method
@@ -93,8 +119,8 @@
                 _CONTAINER_ELEMENT.css({overflow: 'visible'});
                 
                 
+                
                 Calculate_Sensitive_Changes();
-    
                 Initialize_Popover();
                 Initialize_Darkground();
                 Next_Step_Configuration();
@@ -102,21 +128,46 @@
                                
                 $(window).bind('resize', function() {
                     clearTimeout(COMPLETE_RESIZE);
-                    console.log(COMPLETE_RESIZE)
                     COMPLETE_RESIZE = setTimeout(function(){
-                        console.log("EXECUTOU => " + COMPLETE_RESIZE)
                         Calculate_Sensitive_Changes();
                         Step_Actions();
-                        console.log("Resize")
                     },100)
                 });
 
                 $(window).bind('hashchange', function() {
                     Reconect_Tutorial();
-                    console.log("Alive")
                 });
+
+                document.addEventListener('mouseup', mouse_up_handler, true);
+                document.addEventListener('click', click_handler, true);
             }
         };
+
+        var Check_Valid_Click = function(Xm,Ym,Allowed_Buttons){
+            let _SCREEN_BUTTONS = ["#nextBT","#prevBT","#endtourBT"];
+            for(var i in _SCREEN_BUTTONS){
+                let el = $(_SCREEN_BUTTONS[i]);
+                let Xi = el.offset().left;
+                let Yi = el.offset().top;
+                let Xf = el.outerWidth()  + Xi;
+                let Yf = el.outerHeight() + Yi;
+                if(Xm <= Xf && Xm >= Xi && Ym <= Yf && Ym >= Yi){
+                    return true;
+                }
+            }
+            for(var i in Allowed_Buttons){
+                let el = $(Allowed_Buttons[i]);
+                let Xi = el.offset().left;
+                let Yi = el.offset().top;
+                let Xf = el.outerWidth()  + Xi;
+                let Yf = el.outerHeight() + Yi;
+                if(Xm <= Xf && Xm >= Xi && Ym <= Yf && Ym >= Yi){
+                    el.mouseup();
+                    return true;
+                }
+            }
+            return false;
+        }
 
         var Reconect_Tutorial = function(){         
             if(_CONTAINER_ELEMENT[0].innerHTML != $(_CONTAINER_ID)[0].innerHTML){
@@ -145,21 +196,26 @@
         var Initialize_Popover = function(){
             var parsedPopOver = $.parseHTML(
                 '<div class="tour-tip" id="popover"  >\
-                    <h3 class="tour-tip-title grabbable" id="popover-title"></h3>\
-                    <div class="tour-tip-content"><p id="popover-content"></p></div>\
-                    <div class="row" style="padding:10px; margin:0">\
-                        <div class="col-xs-6">\
-                            <div class="btn-group">\
-                                <button id="prevBT" class="btn btn-sm btn-default"><i class="glyphicon glyphicon-arrow-left"></i></button>\
-                                <button id="nextBT" class="btn btn-sm btn-default"><i class="glyphicon glyphicon-arrow-right"></i></button>\
-                            </div>\
-                        </div>\
+                    <h3 class="modal-header tour-tip-title grabbable" id="popover-title"></h3>\
+                    <div class="modal-body tour-tip-content" style="padding-bottom:10px"><p id="popover-content"></p></div>\
+                    <div class="row modal-footer" style="padding:10px; margin:0">\
                         <div class="col-xs-6">\
                             <button id="endtourBT" class="btn btn-sm btn-default" style="width:100%" data-role="end">Finalizar Tutorial</button>\
+                        </div>\
+                        <div class="col-xs-3">\
+                            <div class="btn-group" style="width:100%">\
+                                <button id="prevBT" style="width:100%" class="btn btn-sm btn-default"><i class="glyphicon glyphicon-arrow-left"></i></button>\
+                            </div>\
+                        </div>\
+                        <div class="col-xs-3">\
+                            <div class="btn-group" style="width:100%">\
+                                <button id="nextBT" style="width:100%" class="btn btn-sm btn-default"><i class="glyphicon glyphicon-arrow-right"></i></button>\
+                            </div>\
                         </div>\
                     </div>\
                 </div>'
             );
+            
             _CONTAINER_ELEMENT.append(parsedPopOver);
             
             _POP_ELEMENT  = $("#popover");
@@ -191,11 +247,9 @@
                 }
             });
 
-            $("#nextBT").click(function() { 
+            $("#nextBT").click(function(e) { 
                 Step++;
                 try{
-                    console.log(Actual_Step.button)
-                    console.log(Actual_Step.button_effects)
                     $(Actual_Step.button).removeClass(Actual_Step.button_effects);
                     $(Actual_Step.button).unbind('mouseup');
                     try{
@@ -212,7 +266,7 @@
             $("#endtourBT").click(function() { _tr.endTour(); });
             
         }
-
+        
         var Initialize_Darkground = function(){
             var parsedDarkground =  $.parseHTML('<div id="dark-bg" class="highlight"></div>');
             _CONTAINER_ELEMENT.append(parsedDarkground);
@@ -230,8 +284,9 @@
             $("#prevBT").css('visibility', 'hidden');
             $("#nextBT").css('visibility', 'hidden');
 
-
-            try{Actual_Element.removeClass(Last_Classes)}catch(e){};
+            try{
+                Actual_Element.removeClass(Last_Classes)
+            }catch(e){};
             Actual_Step           = _BLUEPRINT[Step];
             Previously_Step       = _BLUEPRINT[Step-1];
 
@@ -243,24 +298,12 @@
 
         var Step_Actions = function(){
             try{
-                // var observer = new MutationObserver(function(mutations){
-                //     console.log("Something has change");
-                //     mutations.forEach(function(mutation) {
-                //         console.log(mutation.attributeName);
-                //         console.log(mutation);
-                //     });
-                // });
-                // observer.observe($(Actual_Step.target)[0], { 
-                //     attributes: true,
-                //     childList: true
-                // });
-
                 alternative_flow = false;
                 
                 
-                POP_OFFSET            = _POP_ELEMENT.offset();
-                POP_HEIGHT            = _POP_ELEMENT.outerHeight(true);
-                POP_WIDTH             = _POP_ELEMENT.outerWidth(true);
+                POP_OFFSET           = _POP_ELEMENT.offset();
+                POP_HEIGHT           = _POP_ELEMENT.outerHeight(true);
+                POP_WIDTH            = _POP_ELEMENT.outerWidth(true);
                 
                 let yx_tuple         = Actual_Step.popover.split(" ");
                 Actual_Element_TUPLE = {
@@ -312,6 +355,7 @@
             let target;
             
             
+
             if(!status_x){
                 positions_x.splice(positions_x.indexOf(Actual_Element_TUPLE["x-alignment"]),1);
                 for(var i = 0; !status_x; i++){
@@ -353,13 +397,38 @@
                     break;
                 default:
                     let extra_height = pop_over_final.top + POP_HEIGHT;
-                    _CONTAINER_ELEMENT.height(extra_height - PADDING_TOP);
+                    _CONTAINER_ELEMENT.css("min-height", (extra_height - PADDING_TOP)+"px");
                     target = extra_height - VIEWPORT_HEIGHT + PADDING_BOTTOM;
             }
-            
-            _POP_ELEMENT.offset(pop_over_final);
-            Perform_Scroll(target);
-            
+
+            if(Actual_Step.slide){
+                Perform_Slide(
+                    {
+                        top: pop_over_final.top - _POP_ELEMENT.offset().top,
+                        left: pop_over_final.left - _POP_ELEMENT.offset().left
+                    }
+                );
+            }else{
+                _POP_ELEMENT.offset(pop_over_final);
+                Perform_Scroll(target);
+            }
+        }
+
+        var Perform_Slide = function(target){
+            $('#popover').css('visibility', 'visible');
+            $("#prevBT").css('visibility', Actual_Step.arrows=='hidden'?'hidden':'visible');
+            $("#nextBT").css('visibility', Actual_Step.arrows=='hidden'?'hidden':'visible');
+            // $("#dark-bg").css('visibility', 'visible');
+            $(_POP_ELEMENT).animate({
+                top: "+="+target.top,
+                left: "+="+target.left,
+            }, (Actual_Step.slide?Actual_Step.slide:1000),
+            function(){
+                let effects = Actual_Step.effect.split(" ");
+                for(var i in effects){
+                    Effects_Map(effects[i]);
+                }
+            });
         }
 
         var Perform_Scroll = function(target){
@@ -375,7 +444,7 @@
                 for(var i in effects){
                     Effects_Map(effects[i]);
                 }
-            })
+            });
         }
 
         var Effects_Map = function(effect){
@@ -386,24 +455,16 @@
                     Actual_Element.addClass("selected-tour");
                     break;
                 case "action":
+                    Actual_Step.limit = Actual_Step.limit?Actual_Step.limit:0;
+                    Actual_Step.counter = Actual_Step.counter?Actual_Step.counter:0;
                     if(Actual_Step.button){
-                        $(Actual_Step.button).addClass(Actual_Step.button_effects);
-                        $(Actual_Step.button).unbind('mouseup');
-                        $(Actual_Step.button).one("mouseup",function(){
-                            Step++;
-                            $(Actual_Step.button).removeClass(Actual_Step.button_effects);
-                            Next_Step_Configuration();
-                        })
+                        Actual_Step.counter = 0;
+                        Bind_Action_Event(Actual_Step.button);
                         try{
-                            $(Actual_Step.alt_button).addClass(Actual_Step.button_effects);
-                            $(Actual_Step.alt_button).unbind('mouseup');
-                            $(Actual_Step.alt_button).one("mouseup",function(){
-                                Step++;
-                                $(Actual_Step.alt_button).removeClass(Actual_Step.button_effects);
-                                Next_Step_Configuration();
-                            })
+                            Bind_Action_Event(Actual_Step.alt_button);
                         }catch(e){}
                     }
+
                     break;
                 case "link":
                     if(Actual_Step.button){
@@ -434,26 +495,29 @@
             let withPadding;
             let noPaddingOverflow = false;
             let withPaddingOverflow = false;
+            let REFERENCE_POINT  = (Actual_Step.effect.indexOf("link")!=-1 || Actual_Step.effect.indexOf("action")!=-1)? $(Actual_Step.button) : Actual_Element;
+            let REFERENCE_OFFSET = REFERENCE_POINT.offset();
+            let REFERENCE_WIDTH  = REFERENCE_POINT.outerWidth(true);
             
             switch(position){
                 case "left":
-                    noPadding   = Actual_Element_OFFSET.left - POP_WIDTH - 5;
+                    noPadding   = REFERENCE_OFFSET.left - POP_WIDTH - 5;
                     withPadding = noPadding - Actual_Element_TUPLE["x-shift-ammount"] - 5;
                     break;
                 case "right":
-                    noPadding   = Actual_Element_OFFSET.left + Actual_Element_WIDTH + 5;
+                    noPadding   = REFERENCE_OFFSET.left + REFERENCE_WIDTH + 5;
                     withPadding = noPadding + Actual_Element_TUPLE["x-shift-ammount"] + 5;
                     break;
                 case "inner-left":
-                    noPadding   = Actual_Element_OFFSET.left;
+                    noPadding   = REFERENCE_OFFSET.left;
                     withPadding = noPadding + Actual_Element_TUPLE["x-shift-ammount"];
                     break;
                 case "inner-right":
-                    noPadding   = Actual_Element_OFFSET.left + Actual_Element_WIDTH - POP_WIDTH;
+                    noPadding   = REFERENCE_OFFSET.left + REFERENCE_WIDTH - POP_WIDTH;
                     withPadding = noPadding + Actual_Element_TUPLE["x-shift-ammount"];
                     break;
                 case "center":
-                    noPadding   = Actual_Element_OFFSET.left + (Actual_Element_WIDTH/2) - (POP_WIDTH/2);
+                    noPadding   = REFERENCE_OFFSET.left + (REFERENCE_WIDTH/2) - (POP_WIDTH/2);
                     withPadding = noPadding + Actual_Element_TUPLE["x-shift-ammount"];
                     break;
                 default:
@@ -478,24 +542,28 @@
             let noPadding;
             let withPadding;
             let noPaddingOverflow = false;
-            let withPaddingOverflow = false;
+            let withPaddingOverflow = false; 
+            let REFERENCE_POINT  = (Actual_Step.effect.indexOf("link")!=-1 || Actual_Step.effect.indexOf("action")!=-1)? $(Actual_Step.button) : Actual_Element;
+            let REFERENCE_OFFSET = REFERENCE_POINT.offset();
+            let REFERENCE_HEIGHT  = REFERENCE_POINT.outerHeight(true);
+            
             switch(position){
                 case "top":
-                    noPadding   = Actual_Element_OFFSET.top - POP_HEIGHT - 5;
+                    noPadding   = REFERENCE_OFFSET.top - POP_HEIGHT - 5;
                     withPadding = noPadding - Actual_Element_TUPLE["y-shift-ammount"] - 5;
                     break;
                 case "center":
-                    noPadding   = Actual_Element_OFFSET.top + (Actual_Element_HEIGHT/2) - (POP_HEIGHT/2);
+                    noPadding   = REFERENCE_OFFSET.top + (REFERENCE_HEIGHT/2) - (POP_HEIGHT/2);
                     withPadding = noPadding + Actual_Element_TUPLE["y-shift-ammount"];
                     break;
                 default:
-                    noPadding   = Actual_Element_OFFSET.top + Actual_Element_HEIGHT + 5;
+                    noPadding   = REFERENCE_OFFSET.top + REFERENCE_HEIGHT + 5;
                     withPadding = noPadding + Actual_Element_TUPLE["y-shift-ammount"] + 5;
                     break;
             }
 
-            noPaddingOverflow   = (noPadding < CONTAINER_OFFSET.top && (noPadding + POP_HEIGHT) <= Actual_Element_OFFSET.top);
-            withPaddingOverflow = (withPadding < CONTAINER_OFFSET.top && (withPadding + POP_HEIGHT) <= Actual_Element_OFFSET.top);
+            noPaddingOverflow   = (noPadding < CONTAINER_OFFSET.top && (noPadding + POP_HEIGHT) <= REFERENCE_OFFSET.top);
+            withPaddingOverflow = (withPadding < CONTAINER_OFFSET.top && (withPadding + POP_HEIGHT) <= REFERENCE_OFFSET.top);
             
             let response = {
                 "position": noPadding,
@@ -520,6 +588,21 @@
                 return false;
             }
             return status;
+        }
+
+        var Bind_Action_Event = function(button){
+            $(button).addClass(Actual_Step.button_effects);
+            $(button).unbind('mouseup');
+            $(button).mouseup(function(){
+                Actual_Step.counter += 1;
+                if(Actual_Step.counter >= Actual_Step.limit){
+                    Actual_Step.counter = 0;
+                    Step++;
+                    $(button).removeClass(Actual_Step.button_effects);
+                    $(button).unbind('mouseup');
+                    Next_Step_Configuration();
+                }
+            })
         }
  
 
