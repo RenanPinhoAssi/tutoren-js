@@ -1,13 +1,14 @@
 # tutoren
 
-**-- Starting:**
+> **-- Starting:**
+
 	  
 	  tutoren.startTour(tour_object,anchor_identifier);
   
   **tour_array**: Array of objects, each object will describe an step of your tutorial;
   anchor_identifier: Where tutorial will run;
 
-**-- Options:**
+> **-- Options:**
 
   **target**:         "Target_identifier",
    
@@ -47,7 +48,8 @@
   
     --- Disable arrows on popover
     
-**-- Usage Example:**
+
+> **-- Usage Example:**
 
     var anchor = "#main_window";
     var tourPlan = [
