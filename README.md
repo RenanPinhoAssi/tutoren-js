@@ -2,7 +2,7 @@
 
 # A soft library to do guided tutorial
 
-version: Pink-Power-Ranger-1.3.0
+**version: Pink-Power-Ranger-1.3.0**
 
 
 > **-- Starting:**
