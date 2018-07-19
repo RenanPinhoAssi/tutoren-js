@@ -1,4 +1,4 @@
-//     Tutoren.js 1.2.0 - 02/03/2018
+//     Tutoren.js 1.4.1 - 19/07/2018
 //     (c) 2018 Renan Pinho Assi
 
 
@@ -180,9 +180,10 @@
         }
         var Alternative_Prev_Action = function(){
             try{
-                let split_alternative = Actual_Step.prev.split(" ");
-                _BLUEPRINT = _FULL_MAP[split_alternative[0]];
-                Step = Number(split_alternative[1]); 
+                let split_alternative   = Actual_Step.prev.split(" ");
+                _BLUEPRINT              = _FULL_MAP[split_alternative[0]];
+                _LIMIT                  = _BLUEPRINT.length - 1;   
+                Step                    = Number(split_alternative[1]); 
             }catch(e){
                 Step--;
             }
@@ -190,9 +191,10 @@
 
         var Alternative_Next_Action = function(){
             try{
-                let split_alternative = Actual_Step.next.split(" ");
-                _BLUEPRINT = _FULL_MAP[split_alternative[0]];
-                Step = Number(split_alternative[1]);
+                let split_alternative   = Actual_Step.next.split(" ");
+                _BLUEPRINT              = _FULL_MAP[split_alternative[0]];
+                _LIMIT                  = _BLUEPRINT.length - 1;   
+                Step                    = Number(split_alternative[1]);
             }catch(e){
                 Step++;
             }
@@ -643,9 +645,6 @@
                 }
             })
         }
- 
-
-
         return _tr;
     }
 
