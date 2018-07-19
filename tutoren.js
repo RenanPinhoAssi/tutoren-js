@@ -18,6 +18,7 @@
 
         /////////////////////////////////////////////////////////////////////////////
 
+        var _FULL_MAP;
         var _BLUEPRINT;             // Each step with all needed properties
         var _CONTAINER_ID;          // Store container id
         var _FOOTER_ID;             // Store footer id
@@ -52,6 +53,8 @@
         var Actual_Element_WIDTH;   // $(_BLUEPRINT[Step].target).outerWidth(true);
         var Actual_Element_TUPLE;   // Store the user option of padding and pop-over location
         var Actual_Target;          // Scroll position after some seconds
+        var Alternative_Prev;       
+        var Alternative_Next;
         
 
         var Step;
@@ -106,7 +109,14 @@
         _tr.startTour = function(blueprint,containerID,footerID){
             if(!_tr.running){
                 _tr.running = true;
-                _BLUEPRINT         = blueprint;
+                if(blueprint["primary_track"]){
+                    _FULL_MAP      = blueprint;
+                    _BLUEPRINT     = blueprint["primary_track"];
+                }else{
+                    _FULL_MAP      = null;
+                    _BLUEPRINT     = blueprint;
+                }
+
                 _CONTAINER_ID      = containerID;
                 _FOOTER_ID         = footerID;
                 _LIMIT             = _BLUEPRINT.length - 1;   
@@ -167,6 +177,25 @@
                 }
             }
             return false;
+        }
+        var Alternative_Prev_Action = function(){
+            try{
+                let split_alternative = Actual_Step.prev.split(" ");
+                _BLUEPRINT = _FULL_MAP[split_alternative[0]];
+                Step = Number(split_alternative[1]); 
+            }catch(e){
+                Step--;
+            }
+        }
+
+        var Alternative_Next_Action = function(){
+            try{
+                let split_alternative = Actual_Step.next.split(" ");
+                _BLUEPRINT = _FULL_MAP[split_alternative[0]];
+                Step = Number(split_alternative[1]);
+            }catch(e){
+                Step++;
+            }
         }
 
         var Reconect_Tutorial = function(){         
@@ -229,8 +258,6 @@
             );
 
             $("#prevBT").click(function() { 
-                Step--;
-
                 try{
                     $(Actual_Step.button).removeClass(Actual_Step.button_effects);
                     $(Actual_Step.button).unbind('mouseup');
@@ -241,14 +268,15 @@
                 }catch(e){}
 
                 if(Previously_Step.effect.indexOf("link") == -1){
+                    Alternative_Prev_Action();
                     Next_Step_Configuration(); 
                 }else{
                     location.href = Previously_Step.root_href;
+                    Alternative_Prev_Action();
                 }
             });
 
             $("#nextBT").click(function(e) { 
-                Step++;
                 try{
                     $(Actual_Step.button).removeClass(Actual_Step.button_effects);
                     $(Actual_Step.button).unbind('mouseup');
@@ -258,9 +286,11 @@
                     }catch(e){}
                 }catch(e){}
                 if(Actual_Step.effect.indexOf("link") == -1){
+                    Alternative_Next_Action();
                     Next_Step_Configuration();
                 }else{
                     location.href = Actual_Step.href;
+                    Alternative_Next_Action();
                 }
             });
             $("#endtourBT").click(function() { _tr.endTour(); });
@@ -275,9 +305,11 @@
         }
 
         var Next_Step_Configuration = function(){
+            Alternative_Prev = _BLUEPRINT[Step].prev?_BLUEPRINT[Step].prev:false;       
+            Alternative_Next = _BLUEPRINT[Step].next?_BLUEPRINT[Step].next:false;
 
-            Step == 0      ? $("#prevBT").prop("disabled",true) : $("#prevBT").prop("disabled",false);
-            Step == _LIMIT ? $("#nextBT").prop("disabled",true) : $("#nextBT").prop("disabled",false);
+            Step == 0      && !Alternative_Prev ? $("#prevBT").prop("disabled",true) : $("#prevBT").prop("disabled",false);
+            Step == _LIMIT && !Alternative_Next ? $("#nextBT").prop("disabled",true) : $("#nextBT").prop("disabled",false);
     
             $('#popover').css('visibility', 'hidden');
             $("#dark-bg").css('visibility', 'hidden');
@@ -287,9 +319,17 @@
             try{
                 Actual_Element.removeClass(Last_Classes)
             }catch(e){};
-            Actual_Step           = _BLUEPRINT[Step];
-            Previously_Step       = _BLUEPRINT[Step-1];
 
+            
+            Actual_Step       = _BLUEPRINT[Step];
+            if(Alternative_Prev){
+                let split_alternative = Actual_Step.prev.split(" ");
+                Previously_Step   = _FULL_MAP[split_alternative[0]][split_alternative[1]];
+            }else{
+                Previously_Step   = _BLUEPRINT[Step-1];
+            }
+            
+            
 
             _POP_TITLE.html( Actual_Step.title );
             _POP_CONTENT.html( Actual_Step.text );
@@ -418,7 +458,6 @@
             $('#popover').css('visibility', 'visible');
             $("#prevBT").css('visibility', Actual_Step.arrows=='hidden'?'hidden':'visible');
             $("#nextBT").css('visibility', Actual_Step.arrows=='hidden'?'hidden':'visible');
-            // $("#dark-bg").css('visibility', 'visible');
             $(_POP_ELEMENT).animate({
                 top: "+="+target.top,
                 left: "+="+target.left,
@@ -472,14 +511,14 @@
                         $(Actual_Step.button).unbind('mouseup');
                         $(Actual_Step.button).one("mouseup",function(){
                             $(Actual_Step.button).removeClass(Actual_Step.button_effects);
-                            Step++
+                            Alternative_Next_Action();
                         })
                         try{
                             $(Actual_Step.alt_button).addClass(Actual_Step.button_effects);
                             $(Actual_Step.alt_button).unbind('mouseup');
                             $(Actual_Step.alt_button).one("mouseup",function(){
                                 $(Actual_Step.alt_button).removeClass(Actual_Step.button_effects);
-                                Step++
+                                Alternative_Next_Action();
                             })
                         }catch(e){}
                     }
@@ -597,9 +636,9 @@
                 Actual_Step.counter += 1;
                 if(Actual_Step.counter >= Actual_Step.limit){
                     Actual_Step.counter = 0;
-                    Step++;
                     $(button).removeClass(Actual_Step.button_effects);
                     $(button).unbind('mouseup');
+                    Alternative_Next_Action();
                     Next_Step_Configuration();
                 }
             })
