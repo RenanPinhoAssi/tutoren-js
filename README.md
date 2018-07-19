@@ -1,6 +1,6 @@
 # TUTOREN.JS
 
-# A soft library to do guided tutorial
+# A soft library for guided tutorial
 
 **version: Pink-Power-Ranger-1.3.0**
 
