@@ -66,20 +66,29 @@
 
 
         var mouse_up_handler = function(e) { 
-            e.preventDefault();
-            e.stopPropagation();
+            if(e.path[0].id == "popover-title"){
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
         }
 
         var click_handler = function(e) { 
             let Xm = e.pageX;
             let Ym = e.pageY;
             let Allowed_Buttons;
+            let Other_buttons;
+
             try{
                 Allowed_Buttons = Actual_Step.button.split(" ");
             }catch(e){
                 Allowed_Buttons = [];
             }
-            if(!Check_Valid_Click(Xm,Ym,Allowed_Buttons)){
+            try{
+                Other_buttons = Actual_Step.buttons_allowed.split(" ");
+            }catch(e){}
+
+            if(!Check_Valid_Click(Xm,Ym,Allowed_Buttons,Other_buttons)){
                 e.preventDefault();
                 e.stopPropagation();
                 return false;
@@ -93,6 +102,7 @@
         _tr.endTour = function(){
             $("#dark-bg").remove();
             $('#popover').remove();
+            Remove_Extra_Effect();
             try{Actual_Element.removeClass(Last_Classes)}catch(e){};
             $(window).unbind('resize');
             $(window).unbind('hashchange');
@@ -153,7 +163,7 @@
             }
         };
 
-        var Check_Valid_Click = function(Xm,Ym,Allowed_Buttons){
+        var Check_Valid_Click = function(Xm,Ym,Allowed_Buttons,Other_buttons){
             let _SCREEN_BUTTONS = ["#nextBT","#prevBT","#endtourBT"];
             for(var i in _SCREEN_BUTTONS){
                 let el = $(_SCREEN_BUTTONS[i]);
@@ -167,6 +177,18 @@
             }
             for(var i in Allowed_Buttons){
                 let el = $(Allowed_Buttons[i]);
+                let Xi = el.offset().left;
+                let Yi = el.offset().top;
+                let Xf = el.outerWidth()  + Xi;
+                let Yf = el.outerHeight() + Yi;
+                if(Xm <= Xf && Xm >= Xi && Ym <= Yf && Ym >= Yi){
+                    el.mouseup();
+                    return true;
+                }
+            }
+
+            for(var i in Other_buttons){
+                let el = $(Other_buttons[i]);
                 let Xi = el.offset().left;
                 let Yi = el.offset().top;
                 let Xf = el.outerWidth()  + Xi;
@@ -255,11 +277,10 @@
 
             _POP_ELEMENT.css('visibility', 'hidden');
 
-            $("#popover").draggable(
-                {handle: "#popover-title"}
-            );
+            $("#popover").draggable({handle: "#popover-title"});
 
             $("#prevBT").click(function() { 
+                Remove_Extra_Effect();
                 try{
                     $(Actual_Step.button).removeClass(Actual_Step.button_effects);
                     $(Actual_Step.button).unbind('mouseup');
@@ -279,6 +300,7 @@
             });
 
             $("#nextBT").click(function(e) { 
+                Remove_Extra_Effect();
                 try{
                     $(Actual_Step.button).removeClass(Actual_Step.button_effects);
                     $(Actual_Step.button).unbind('mouseup');
@@ -317,18 +339,18 @@
             $("#dark-bg").css('visibility', 'hidden');
             $("#prevBT").css('visibility', 'hidden');
             $("#nextBT").css('visibility', 'hidden');
-
+            Remove_Extra_Effect();
             try{
-                Actual_Element.removeClass(Last_Classes)
+                Actual_Element.removeClass(Last_Classes);
             }catch(e){};
 
             
-            Actual_Step       = _BLUEPRINT[Step];
+            Actual_Step = _BLUEPRINT[Step];
             if(Alternative_Prev){
-                let split_alternative = Actual_Step.prev.split(" ");
-                Previously_Step   = _FULL_MAP[split_alternative[0]][split_alternative[1]];
+                let split_alternative   = Actual_Step.prev.split(" ");
+                Previously_Step         = _FULL_MAP[split_alternative[0]][split_alternative[1]];
             }else{
-                Previously_Step   = _BLUEPRINT[Step-1];
+                Previously_Step         = _BLUEPRINT[Step-1];
             }
             
             
@@ -489,6 +511,7 @@
         }
 
         var Effects_Map = function(effect){
+            Bind_Extra_Effect();
             switch(effect) {
                 case "highlight":
                     Last_Classes += " selected-tour";
@@ -534,11 +557,11 @@
         var Get_X_Pop_Status = function(position){
             let noPadding;
             let withPadding;
-            let noPaddingOverflow = false;
+            let noPaddingOverflow   = false;
             let withPaddingOverflow = false;
-            let REFERENCE_POINT  = (Actual_Step.effect.indexOf("link")!=-1 || Actual_Step.effect.indexOf("action")!=-1)? $(Actual_Step.button) : Actual_Element;
-            let REFERENCE_OFFSET = REFERENCE_POINT.offset();
-            let REFERENCE_WIDTH  = REFERENCE_POINT.outerWidth(true);
+            let REFERENCE_POINT     = (Actual_Step.effect.indexOf("link")!=-1 || Actual_Step.effect.indexOf("action")!=-1)? $(Actual_Step.button) : Actual_Element;
+            let REFERENCE_OFFSET    = REFERENCE_POINT.offset();
+            let REFERENCE_WIDTH     = REFERENCE_POINT.outerWidth(true);
             
             switch(position){
                 case "left":
@@ -582,11 +605,11 @@
         var Get_Y_Pop_Status = function(position){
             let noPadding;
             let withPadding;
-            let noPaddingOverflow = false;
+            let noPaddingOverflow   = false;
             let withPaddingOverflow = false; 
-            let REFERENCE_POINT  = (Actual_Step.effect.indexOf("link")!=-1 || Actual_Step.effect.indexOf("action")!=-1)? $(Actual_Step.button) : Actual_Element;
-            let REFERENCE_OFFSET = REFERENCE_POINT.offset();
-            let REFERENCE_HEIGHT  = REFERENCE_POINT.outerHeight(true);
+            let REFERENCE_POINT     = (Actual_Step.effect.indexOf("link")!=-1 || Actual_Step.effect.indexOf("action")!=-1)? $(Actual_Step.button) : Actual_Element;
+            let REFERENCE_OFFSET    = REFERENCE_POINT.offset();
+            let REFERENCE_HEIGHT    = REFERENCE_POINT.outerHeight(true);
             
             switch(position){
                 case "top":
@@ -645,6 +668,28 @@
                 }
             })
         }
+
+        var Bind_Extra_Effect = function(){
+            try{
+                let extra_buttons = Actual_Step.buttons_allowed.split();
+                for(let i in extra_buttons){
+                    $(extra_buttons[i]).addClass(Actual_Step.allowed_effects);
+                }
+            }catch(e){
+                console.log(e)
+            }
+        }
+
+        var Remove_Extra_Effect = function(){
+            try{
+                let extra_buttons = Actual_Step.buttons_allowed.split();
+                for(let i in extra_buttons){
+                    $(extra_buttons[i]).removeClass(Actual_Step.allowed_effects);
+                }
+            }catch(e){}
+        }
+
+
         return _tr;
     }
 
